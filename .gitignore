@@ -1,0 +1,30 @@
+# Python 캐시 파일
+__pycache__/
+*.py[cod]
+
+# 가상환경
+.venv/
+venv/
+env/
+
+# 테스트 및 도구 캐시
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE 설정
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# 로그 파일
+*.log
+
+# 가계부 실제 데이터
+data/*.jsonl
+
+# CSV 가져오기/내보내기 파일
+*.csv
