@@ -1,0 +1,7 @@
+{"id": "3aba2d41651d", "type": "expense", "date": "2026-09-16", "amount": 9500, "category": "식비", "memo": "제육", "tags": []}
+{"id": "9b010e5c00ed", "type": "income", "date": "2026-09-01", "amount": 2500000, "category": "급여", "memo": "9월 월급", "tags": ["월급", "고정수입"]}
+{"id": "fbbc951d91e7", "type": "expense", "date": "2026-09-02", "amount": 8500, "category": "식비", "memo": "학교 점심", "tags": ["점심", "학교"]}
+{"id": "d607153e82af", "type": "expense", "date": "2026-09-03", "amount": 1450, "category": "교통", "memo": "학교 지하철", "tags": ["교통", "지하철"]}
+{"id": "f76c13acd27f", "type": "expense", "date": "2026-09-20", "amount": 10000, "category": "식비", "memo": "저녁 식사", "tags": ["저녁", "식사"]}
+{"id": "bccaa7186d17", "type": "expense", "date": "2026-09-21", "amount": 1500, "category": "교통", "memo": "버스", "tags": ["교통", "버스"]}
+{"id": "21a09440f5ba", "type": "income", "date": "2026-09-22", "amount": 50000, "category": "기타", "memo": "중고거래", "tags": ["중고", "판매"]}
