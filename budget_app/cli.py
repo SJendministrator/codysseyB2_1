@@ -1,5 +1,7 @@
 import argparse
 
+from .decorators import handle_errors
+
 from .commands import (
     handle_add,
     handle_budget_set,
@@ -233,6 +235,8 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 # 명령행 인자를 분석하고 선택된 명령어 함수를 실행한다.
+# handle_errors: 어떤 예외가 나도 스택트레이스 대신 원인 + 힌트를 출력하고 0이 아닌 코드로 종료
+@handle_errors
 def run() -> int:
     parser = create_parser()
     args = parser.parse_args()

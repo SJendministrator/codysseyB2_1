@@ -1,9 +1,9 @@
 # [역할] CSV 파일 읽기/쓰기를 위한 표준 모듈을 임포트합니다.
 import csv
+# [역할] 전체를 메모리에 올리지 않고 상위 N개만 유지하며 고르기 위해 heapq를 임포트합니다.
+import heapq
 # [역할] 중복 없는 고유 거래 ID(hex)를 생성하기 위해 uuid 모듈을 임포트합니다.
 import uuid
-# [역할] 양방향 큐 자료구조 모듈을 임포트합니다. (기존 import 보존)
-from collections import deque
 # [역할] 파일 시스템 경로를 객체 지향적으로 다루기 위해 Path를 임포트합니다.
 from pathlib import Path
 # [역할] 제너레이터 함수 반환 타입을 명시하기 위해 Iterator를 임포트합니다.
@@ -101,22 +101,16 @@ class BudgetService:
         # [사용 변수] limit: 조회할 최대 거래 건수 (정수)
         limit = validate_limit(str(limit))
 
-        # [역할] 저장소의 모든 거래 내역 제너레이터를 리스트로 한 번에 메모리에 적재합니다.
-        # [사용 변수] transactions: Transaction 객체 리스트
-        transactions = list(
-            self.repository.stream_transactions()
-        )
-
-        # [역할] 날짜(date) 필드를 기준으로 내림차순(최신순) 정렬합니다.
-        # [상태 변화] transactions 리스트의 원소 순서가 최신 날짜 우선으로 재배열됨
-        transactions.sort(
+        # [역할] 파일을 한 줄씩 스트리밍하면서 날짜가 가장 최근인 limit개만 힙에 유지합니다.
+        # [메모리] 파일 크기와 상관없이 항상 limit개만 메모리에 남습니다. (전체 적재 X)
+        latest = heapq.nlargest(
+            limit,
+            self.repository.stream_transactions(),
             key=lambda transaction: transaction.date,
-            reverse=True,
         )
 
-        # [역할] 최신순으로 정렬된 리스트에서 limit 개수만큼만 잘라 제너레이터로 차례대로 yield 반환합니다.
-        for transaction in transactions[:limit]:
-            yield transaction
+        # [역할] 최신순으로 골라진 거래를 제너레이터로 차례대로 반환합니다.
+        yield from latest
 
     # 새로운 거래를 검증하고 저장한 뒤 생성된 거래를 반환한다.
     @log_execution
@@ -579,13 +573,12 @@ class BudgetService:
         imported_transactions: list[Transaction] = []
 
         # [역할] CSV 파일에 반드시 존재해야 하는 필수 헤더 컬럼명 세트입니다.
+        # [명세] memo, tags는 선택 컬럼이므로 필수 검사에서 제외합니다.
         required_columns = {
             "date",
             "type",
             "category",
             "amount",
-            "memo",
-            "tags",
         }
 
         # [역할] UTF-8 BOM 인코딩을 고려하여 CSV 파일을 읽기 모드로 엽니다.
@@ -624,7 +617,8 @@ class BudgetService:
                         row["category"],
                         category_names,
                     )
-                    tags = validate_tags(row.get("tags", ""))
+                    # [선택 컬럼] 컬럼이 없거나 비어 있으면 빈 값으로 처리합니다.
+                    tags = validate_tags(row.get("tags") or "")
 
                     # [객체 생성] 검증이 통과된 행을 Transaction 인스턴스로 변환하여 임시 리스트에 추가합니다.
                     imported_transactions.append(
@@ -634,7 +628,7 @@ class BudgetService:
                             date=date,
                             amount=amount,
                             category=category,
-                            memo=row.get("memo", "").strip(),
+                            memo=(row.get("memo") or "").strip(),
                             tags=tags,
                         )
                     )

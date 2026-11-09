@@ -6,28 +6,29 @@ from typing import Iterable
 VALID_TYPES = {"income", "expense"}
 
 
-# 입력받은 날짜가 YYYY-MM-DD 형식인지 확인한다.
+# 입력받은 날짜가 YYYY-MM-DD 형식인지 확인하고, 0을 채운 표준 형식으로 돌려준다.
+# (2026-9-5 → 2026-09-05: 문자열 비교로 하는 정렬·기간 검색·월 요약이 깨지지 않도록)
 def validate_date(value: str) -> str:
     try:
-        datetime.strptime(value, "%Y-%m-%d")
+        parsed = datetime.strptime(value.strip(), "%Y-%m-%d")
     except ValueError:
         raise ValueError(
             "날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식으로 입력하세요."
         )
 
-    return value
+    return parsed.strftime("%Y-%m-%d")
 
 
-# 입력받은 월이 YYYY-MM 형식인지 확인한다.
+# 입력받은 월이 YYYY-MM 형식인지 확인하고, 0을 채운 표준 형식으로 돌려준다. (2026-9 → 2026-09)
 def validate_month(value: str) -> str:
     try:
-        datetime.strptime(value, "%Y-%m")
+        parsed = datetime.strptime(value.strip(), "%Y-%m")
     except ValueError:
         raise ValueError(
             "월 형식이 올바르지 않습니다. YYYY-MM 형식으로 입력하세요."
         )
 
-    return value
+    return parsed.strftime("%Y-%m")
 
 
 # 입력받은 금액이 0보다 큰 정수인지 확인한다.

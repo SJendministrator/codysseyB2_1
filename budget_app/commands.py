@@ -199,11 +199,8 @@ def handle_category_remove(args) -> int:
         return 0
 
     except ValueError as error:
+        # 오류 원인(없는 카테고리 / 사용 중인 카테고리)은 서비스가 보낸 메시지에 이미 담겨 있다.
         print(f"[카테고리 오류] {error}")
-        print(
-            "거래에서 사용 중인 카테고리는 "
-            "삭제할 수 없습니다."
-        )
         return 1
 
 
