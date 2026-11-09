@@ -1,3 +1,6 @@
+# Python 3.9 호환: 타입 힌트의 `str | None` 문법을 실행 시점에 계산하지 않고 문자열로 둔다.
+from __future__ import annotations
+
 # [역할] CSV 파일 읽기/쓰기를 위한 표준 모듈을 임포트합니다.
 import csv
 # [역할] 전체를 메모리에 올리지 않고 상위 N개만 유지하며 고르기 위해 heapq를 임포트합니다.
@@ -73,6 +76,10 @@ class BudgetService:
             category.name
             for category in self.repository.stream_categories()
         }
+
+    # 등록된 카테고리 이름을 가나다순으로 반환한다. (add 입력 화면에서 안내용으로 사용)
+    def category_names(self) -> list[str]:
+        return sorted(self._get_category_names())
 
     # 거래 ID를 중복되지 않는 새로운 값으로 생성한다.
     def _generate_transaction_id(self) -> str:
@@ -557,7 +564,7 @@ class BudgetService:
     # CSV 파일의 거래 데이터를 검증한 뒤 한꺼번에 저장한다.
     @log_execution
     @measure_time
-    def import_csv(self, csv_path: str | Path) -> int:
+    def import_csv(self, csv_path: str | Path) -> tuple[int, int]:
         # [역할] 전달받은 경로를 Path 객체로 래핑합니다.
         csv_path = Path(csv_path)
 
@@ -571,6 +578,18 @@ class BudgetService:
         category_names = self._get_category_names()
         # [역할] CSV에서 읽어 들여 유효성 검사를 통과한 거래 객체들을 임시 보관할 리스트입니다.
         imported_transactions: list[Transaction] = []
+
+        # [중복 방지] 이미 저장된 거래의 ID와 '내용'을 한 번만 읽어 둡니다.
+        #   - export 한 CSV를 다시 import 하면 같은 거래가 새 ID로 또 들어가던 문제를 막습니다.
+        #   - 파일을 행마다 다시 읽지 않으므로 import 속도도 빨라집니다.
+        existing_ids: set[str] = set()
+        existing_contents: set[tuple] = set()
+        for saved in self.repository.stream_transactions():
+            existing_ids.add(saved.id)
+            existing_contents.add(self._content_key(saved))
+
+        # [카운터] 중복이라 건너뛴 행 수
+        skipped = 0
 
         # [역할] CSV 파일에 반드시 존재해야 하는 필수 헤더 컬럼명 세트입니다.
         # [명세] memo, tags는 선택 컬럼이므로 필수 검사에서 제외합니다.
@@ -619,19 +638,39 @@ class BudgetService:
                     )
                     # [선택 컬럼] 컬럼이 없거나 비어 있으면 빈 값으로 처리합니다.
                     tags = validate_tags(row.get("tags") or "")
+                    memo = (row.get("memo") or "").strip()
+                    row_id = (row.get("id") or "").strip()
 
-                    # [객체 생성] 검증이 통과된 행을 Transaction 인스턴스로 변환하여 임시 리스트에 추가합니다.
-                    imported_transactions.append(
-                        Transaction(
-                            id=self._generate_transaction_id(),
-                            type=transaction_type,
-                            date=date,
-                            amount=amount,
-                            category=category,
-                            memo=(row.get("memo") or "").strip(),
-                            tags=tags,
-                        )
+                    candidate = Transaction(
+                        id=row_id,
+                        type=transaction_type,
+                        date=date,
+                        amount=amount,
+                        category=category,
+                        memo=memo,
+                        tags=tags,
                     )
+
+                    # [중복 검사 1] id 컬럼이 있고 이미 저장된(또는 같은 파일에서 앞서 나온) id면 건너뜁니다.
+                    if row_id and row_id in existing_ids:
+                        skipped += 1
+                        continue
+
+                    # [중복 검사 2] id 가 없는 예전 형식 CSV는 내용(날짜·타입·카테고리·금액·메모·태그)이
+                    #               완전히 같은 거래가 이미 있으면 건너뜁니다.
+                    content = self._content_key(candidate)
+                    if not row_id and content in existing_contents:
+                        skipped += 1
+                        continue
+
+                    # [ID 결정] CSV의 id 를 그대로 살리고(복원), 없으면 새로 만듭니다.
+                    if not row_id:
+                        candidate.id = self._new_id(existing_ids)
+
+                    # [객체 등록] 이후 행의 중복 검사에도 반영되도록 집합에 추가합니다.
+                    existing_ids.add(candidate.id)
+                    existing_contents.add(content)
+                    imported_transactions.append(candidate)
 
                 # [예외 래핑] 중간 행에서 오류 발생 시 몇 번째 행에서 터졌는지 명시하여 다시 던집니다.
                 except ValueError as error:
@@ -643,8 +682,28 @@ class BudgetService:
         for transaction in imported_transactions:
             self.repository.add_transaction(transaction)
 
-        # [역할] 성공적으로 등록된 총 거래 건수를 반환합니다.
-        return len(imported_transactions)
+        # [역할] (추가된 건수, 중복이라 건너뛴 건수)를 반환합니다.
+        return len(imported_transactions), skipped
+
+    # 거래의 '내용'만으로 만든 비교용 키 (id 제외). 같은 내용이면 같은 거래로 본다.
+    @staticmethod
+    def _content_key(transaction: Transaction) -> tuple:
+        return (
+            transaction.date,
+            transaction.type,
+            transaction.category,
+            transaction.amount,
+            transaction.memo,
+            tuple(transaction.tags),
+        )
+
+    # 이미 사용 중인 ID 집합과 겹치지 않는 새 ID를 만든다. (파일을 다시 읽지 않음)
+    @staticmethod
+    def _new_id(existing_ids: set[str]) -> str:
+        while True:
+            transaction_id = uuid.uuid4().hex[:12]
+            if transaction_id not in existing_ids:
+                return transaction_id
 
     # 지정한 조건에 맞는 거래를 CSV 파일로 저장하고 건수를 반환한다.
     @log_execution
@@ -695,6 +754,8 @@ class BudgetService:
             # [역할] 출력할 필드 순서를 정의하고 DictWriter를 초기화합니다.
             writer = csv.DictWriter(
                 file,
+                # [스키마] 명세의 최소 컬럼 6개 + 마지막에 id 컬럼(선택).
+                #         다시 import 할 때 같은 거래를 알아보고 중복 등록을 막는 데 쓴다.
                 fieldnames=[
                     "date",
                     "type",
@@ -702,6 +763,7 @@ class BudgetService:
                     "amount",
                     "memo",
                     "tags",
+                    "id",
                 ],
             )
 
@@ -731,6 +793,7 @@ class BudgetService:
                         "amount": transaction.amount,
                         "memo": transaction.memo,
                         "tags": ",".join(transaction.tags),
+                        "id": transaction.id,
                     }
                 )
 

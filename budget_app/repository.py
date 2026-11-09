@@ -162,8 +162,7 @@ class FileRepository:
         self._append_json(
             self.budgets_file,
             {
-                "month": budget.month,
-                "amount": budget.amount,
+                "month": budget.month, "amount": budget.amount,
             },
         )
 
@@ -182,10 +181,8 @@ class FileRepository:
             )
 
         fd, temp_path = tempfile.mkstemp(
-            dir=self.data_dir,
-            prefix=f"{file_path.stem}_",
-            suffix=".tmp",
-            text=True,
+            dir=self.data_dir, prefix=f"{file_path.stem}_",
+            suffix=".tmp", text=True,
         )
 
         try:

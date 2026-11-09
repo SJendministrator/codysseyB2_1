@@ -1,3 +1,5 @@
+from typing import Callable, TypeVar
+
 from .repository import FileRepository
 from .services import BudgetService
 from .formatters import (
@@ -5,6 +7,15 @@ from .formatters import (
     format_summary,
     format_transaction,
 )
+from .validators import (
+    validate_amount,
+    validate_category,
+    validate_date,
+    validate_tags,
+    validate_type,
+)
+
+T = TypeVar("T")
 
 
 # 명령어에서 사용할 서비스 객체를 생성한다.
@@ -13,40 +24,57 @@ def _create_service(data_dir: str) -> BudgetService:
     return BudgetService(repository)
 
 
-# 사용자에게 거래 정보를 입력받아 새 거래를 추가한다.
-def handle_add(args) -> int:
-    service = _create_service(args.data_dir)
-
+# ---------------------------------------------------------------------
+# 대화형 입력 도우미
+# ---------------------------------------------------------------------
+# 한 항목을 입력받아 바로 검증한다. 틀리면 '그 항목만' 다시 묻는다.
+#   (예전: 6개를 다 입력받은 뒤 한꺼번에 검증 → 빈칸도 일단 넘어가고, 틀리면 날짜부터 다시)
+def _ask(prompt: str, validator: Callable[[str], T], hint: str = "") -> T:
     while True:
+        value = input(prompt)
         try:
-            date = input("날짜 (YYYY-MM-DD): ")
-            transaction_type = input(
-                "거래 타입 (income/expense): "
-            )
-            category = input("카테고리: ")
-            amount = input("금액: ")
-            memo = input("메모 (선택): ")
-            tags = input(
-                "태그 (쉼표로 구분, 선택): "
-            )
-
-            transaction = service.add_transaction(
-                date=date,
-                transaction_type=transaction_type,
-                category=category,
-                amount=amount,
-                memo=memo,
-                tags=tags,
-            )
-
-            print("거래가 추가되었습니다.")
-            print(f"생성된 ID: {transaction.id}")
-
-            return 0
-
+            return validator(value)
         except ValueError as error:
             print(f"[입력 오류] {error}")
-            print("잘못된 값을 다시 입력하세요.\n")
+            if hint:
+                print(hint)
+
+
+# ---------------------------------------------------------------------
+# add: 사용자에게 거래 정보를 입력받아 새 거래를 추가한다.
+# ---------------------------------------------------------------------
+def handle_add(args) -> int:
+    service = _create_service(args.data_dir)
+    categories = service.category_names()
+
+    # --- 필수 항목: 입력 즉시 검증, 통과할 때까지 같은 항목 재입력 ---
+    date = _ask("날짜 (YYYY-MM-DD): ", validate_date)
+    transaction_type = _ask("거래 타입 (income/expense): ", validate_type)
+    category = _ask(
+        f"카테고리 ({', '.join(categories)}): ",
+        lambda value: validate_category(value, categories),
+        hint="  → 목록에 없는 카테고리는 먼저 `category add --name 이름` 으로 등록하세요.",
+    )
+    amount = _ask("금액: ", validate_amount)
+
+    # --- 선택 항목: 비워도 됨 ---
+    memo = input("메모 (선택): ")
+    tags = _ask("태그 (쉼표로 구분, 선택): ", lambda value: ",".join(validate_tags(value)))
+
+    # --- 저장 (서비스에서 한 번 더 검증한 뒤 파일에 기록) ---
+    transaction = service.add_transaction(
+        date=date,
+        transaction_type=transaction_type,
+        category=category,
+        amount=str(amount),
+        memo=memo,
+        tags=tags,
+    )
+
+    print("거래가 추가되었습니다.")
+    print(f"생성된 ID: {transaction.id}")
+
+    return 0
 
 
 # 최근 거래를 최신순으로 출력한다.
@@ -252,11 +280,12 @@ def handle_import(args) -> int:
     service = _create_service(args.data_dir)
 
     try:
-        count = service.import_csv(args.csv_path)
+        count, skipped = service.import_csv(args.csv_path)
 
         print(
             f"CSV 가져오기가 완료되었습니다. "
             f"{count}건 추가"
+            + (f", 이미 있는 거래 {skipped}건은 중복이라 건너뜀" if skipped else "")
         )
 
         return 0
