@@ -1,10 +1,12 @@
-{"id": "8efc9e4fca4b", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "0b064b59e728", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "c76aaee7b020", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "d2477636adcb", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "4450ab62435c", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "0230685220b1", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "ba8ee14ebac9", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "c435b28fe087", "type": "income", "date": "2026-11-09", "amount": 12000, "category": "식비", "memo": "식비", "tags": ["식비", "학교"]}
-{"id": "8ce227de52bf", "type": "income", "date": "2026-11-09", "amount": 2000000, "category": "급여", "memo": "급여", "tags": ["급여"]}
-{"id": "c59e2ee03ac3", "type": "income", "date": "2026-11-09", "amount": 300000, "category": "주거", "memo": "주거지원", "tags": ["정부지원금"]}
+{"id": "8f31ff0924ab", "type": "income", "date": "2026-08-01", "amount": 2500000, "category": "급여", "memo": "8월 월급", "tags": ["월급", "고정수입"]}
+{"id": "d7a89ca0469a", "type": "expense", "date": "2026-08-05", "amount": 550000, "category": "주거", "memo": "8월 월세", "tags": ["월세", "고정지출"]}
+{"id": "e41d185d4238", "type": "expense", "date": "2026-08-17", "amount": 32000, "category": "식비", "memo": "친구랑 저녁", "tags": ["외식"]}
+{"id": "104402d85db3", "type": "income", "date": "2026-09-01", "amount": 2500000, "category": "급여", "memo": "9월 월급", "tags": ["월급", "고정수입"]}
+{"id": "89e9c7f1c3c7", "type": "expense", "date": "2026-09-12", "amount": 55000, "category": "교통", "memo": "교통카드 충전", "tags": ["교통"]}
+{"id": "3f7e9a88055c", "type": "expense", "date": "2026-09-24", "amount": 89000, "category": "쇼핑", "memo": "가을 옷", "tags": ["의류"]}
+{"id": "d91ef323334e", "type": "income", "date": "2026-10-01", "amount": 2500000, "category": "급여", "memo": "10월 월급", "tags": ["월급", "고정수입"]}
+{"id": "528a67e6059f", "type": "expense", "date": "2026-10-09", "amount": 18000, "category": "의료", "memo": "감기 진료", "tags": ["병원"]}
+{"id": "e8039d50011a", "type": "expense", "date": "2026-10-21", "amount": 24000, "category": "문화", "memo": "영화 관람", "tags": ["영화", "주말"]}
+{"id": "3b4e1349d6e3", "type": "income", "date": "2026-11-01", "amount": 120000, "category": "기타", "memo": "중고 거래", "tags": ["중고", "판매"]}
+{"id": "3b0ca61b4f30", "type": "expense", "date": "2026-11-03", "amount": 9500, "category": "식비", "memo": "학교 점심", "tags": ["점심", "학교"]}
+{"id": "9fc108da2569", "type": "expense", "date": "2026-11-08", "amount": 1500, "category": "교통", "memo": "버스", "tags": ["교통", "버스"]}

@@ -10,7 +10,6 @@ Python 표준 라이브러리만을 사용하여 구현한 **콘솔 기반 가�
    * 날짜, 수입/지출 유형, 카테고리, 금액, 메모, 태그 입력
    * 거래 ID 자동 생성
    * 입력값 검증 및 오류 안내
-
 2. **거래 목록 조회**
 
    * 최신 날짜순으로 거래 내역 조회
@@ -85,9 +84,33 @@ Python 표준 라이브러리만을 사용하여 구현한 **콘솔 기반 가�
 
 ## 실행 환경
 
-* Python 3.10 이상
+* Python 3.10 이상 (macOS 기본 Python 3.9에서도 전체 기능 동작 확인)
 * Python 표준 라이브러리 사용
 * 별도의 외부 패키지 설치 없이 실행 가능
+
+### ⚠️ 주의사항 (macOS)
+
+Windows는 python.org 설치 시 **"Add python.exe to PATH"**를 체크하면 `python` 명령을 바로 사용할 수 있습니다.
+macOS는 환경에 따라 아래 문제가 생길 수 있습니다.
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `zsh: command not found: python` | macOS 12.3부터 `python` 명령이 제거되고 `python3`만 제공됨 | 이 문서의 `python`을 `python3`로 바꿔 실행하거나, 아래처럼 `python`을 연결 |
+| `python3 --version`이 3.9로 나옴 | 기본 `python3`는 Xcode Command Line Tools에 포함된 3.9 | 그대로 사용 가능 (`from __future__ import annotations`로 3.9 호환 처리) |
+| 3.12를 설치했는데 터미널은 여전히 3.9 | 새로 설치한 Python이 PATH에 연결되지 않음 | 아래 명령으로 연결 |
+| VS Code ▶ 버튼 실행 시 `attempted relative import` 오류 | 패키지 내부 파일을 단독 실행함 | 터미널에서 프로젝트 루트 기준 `python -m budget_app ...`으로 실행 |
+
+설치한 Python(예: Homebrew 3.12)을 `python` / `python3` 명령으로 연결하는 방법:
+
+```bash
+which -a python3 python3.12            # 설치 위치 확인 (예: /usr/local/bin/python3.12)
+mkdir -p ~/.local/bin
+ln -sf /usr/local/bin/python3.12 ~/.local/bin/python
+ln -sf /usr/local/bin/python3.12 ~/.local/bin/python3
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+python --version                       # Python 3.12.x
+```
 
 ---
 
@@ -112,6 +135,88 @@ python -m budget_app --data-dir ./mydata list
 ```
 
 프로그램 실행에 필요한 데이터 파일이 존재하지 않는 경우 자동으로 생성됩니다.
+
+---
+
+## 시연용 예시 데이터
+
+`data/*.jsonl`을 모두 지운 빈 상태에서도 바로 시연할 수 있도록 **4개월(2026-08 ~ 2026-11) × 3건 = 12건** 예시 데이터를 준비했습니다.
+카테고리는 최초 실행 시 자동 생성되는 기본 카테고리만 사용합니다.
+
+| 월 | 날짜 | 유형 | 카테고리 | 금액 | 메모 | 태그 |
+|---|---|---|---|---:|---|---|
+| 8월 | 2026-08-01 | income | 급여 | 2,500,000 | 8월 월급 | 월급, 고정수입 |
+| | 2026-08-05 | expense | 주거 | 550,000 | 8월 월세 | 월세, 고정지출 |
+| | 2026-08-17 | expense | 식비 | 32,000 | 친구랑 저녁 | 외식 |
+| 9월 | 2026-09-01 | income | 급여 | 2,500,000 | 9월 월급 | 월급, 고정수입 |
+| | 2026-09-12 | expense | 교통 | 55,000 | 교통카드 충전 | 교통 |
+| | 2026-09-24 | expense | 쇼핑 | 89,000 | 가을 옷 | 의류 |
+| 10월 | 2026-10-01 | income | 급여 | 2,500,000 | 10월 월급 | 월급, 고정수입 |
+| | 2026-10-09 | expense | 의료 | 18,000 | 감기 진료 | 병원 |
+| | 2026-10-21 | expense | 문화 | 24,000 | 영화 관람 | 영화, 주말 |
+| 11월 | 2026-11-01 | income | 기타 | 120,000 | 중고 거래 | 중고, 판매 |
+| | 2026-11-03 | expense | 식비 | 9,500 | 학교 점심 | 점심, 학교 |
+| | 2026-11-08 | expense | 교통 | 1,500 | 버스 | 교통, 버스 |
+
+### 방법 1. CSV로 한 번에 넣기 (권장)
+
+아래 블록을 통째로 터미널에 붙여넣으면 `demo.csv`를 만들고 12건을 가져옵니다.
+
+```bash
+cat > demo.csv <<'EOF'
+date,type,category,amount,memo,tags
+2026-08-01,income,급여,2500000,8월 월급,"월급,고정수입"
+2026-08-05,expense,주거,550000,8월 월세,"월세,고정지출"
+2026-08-17,expense,식비,32000,친구랑 저녁,외식
+2026-09-01,income,급여,2500000,9월 월급,"월급,고정수입"
+2026-09-12,expense,교통,55000,교통카드 충전,교통
+2026-09-24,expense,쇼핑,89000,가을 옷,의류
+2026-10-01,income,급여,2500000,10월 월급,"월급,고정수입"
+2026-10-09,expense,의료,18000,감기 진료,병원
+2026-10-21,expense,문화,24000,영화 관람,"영화,주말"
+2026-11-01,income,기타,120000,중고 거래,"중고,판매"
+2026-11-03,expense,식비,9500,학교 점심,"점심,학교"
+2026-11-08,expense,교통,1500,버스,"교통,버스"
+EOF
+python -m budget_app import --from demo.csv
+```
+
+```text
+CSV 가져오기가 완료되었습니다. 12건 추가
+```
+
+같은 명령을 한 번 더 실행하면 중복 등록 방지가 동작합니다.
+
+```text
+CSV 가져오기가 완료되었습니다. 0건 추가, 이미 있는 거래 12건은 중복이라 건너뜀
+```
+
+### 방법 2. `add`로 한 건씩 넣기
+
+`add`의 대화형 입력(날짜 → 유형 → 카테고리 → 금액 → 메모 → 태그)을 미리 채워서 넣는 방식입니다. 블록을 통째로 붙여넣으면 12건이 차례로 추가됩니다.
+
+```bash
+printf '2026-08-01\nincome\n급여\n2500000\n8월 월급\n월급,고정수입\n'   | python -m budget_app add
+printf '2026-08-05\nexpense\n주거\n550000\n8월 월세\n월세,고정지출\n'   | python -m budget_app add
+printf '2026-08-17\nexpense\n식비\n32000\n친구랑 저녁\n외식\n'           | python -m budget_app add
+printf '2026-09-01\nincome\n급여\n2500000\n9월 월급\n월급,고정수입\n'   | python -m budget_app add
+printf '2026-09-12\nexpense\n교통\n55000\n교통카드 충전\n교통\n'         | python -m budget_app add
+printf '2026-09-24\nexpense\n쇼핑\n89000\n가을 옷\n의류\n'               | python -m budget_app add
+printf '2026-10-01\nincome\n급여\n2500000\n10월 월급\n월급,고정수입\n'  | python -m budget_app add
+printf '2026-10-09\nexpense\n의료\n18000\n감기 진료\n병원\n'             | python -m budget_app add
+printf '2026-10-21\nexpense\n문화\n24000\n영화 관람\n영화,주말\n'        | python -m budget_app add
+printf '2026-11-01\nincome\n기타\n120000\n중고 거래\n중고,판매\n'        | python -m budget_app add
+printf '2026-11-03\nexpense\n식비\n9500\n학교 점심\n점심,학교\n'         | python -m budget_app add
+printf '2026-11-08\nexpense\n교통\n1500\n버스\n교통,버스\n'              | python -m budget_app add
+```
+
+### 예산 설정 (요약 시연용)
+
+```bash
+python -m budget_app budget set --month 2026-09 --amount 100000   # 9월 지출 144,000원 → 144% 초과 경고
+python -m budget_app budget set --month 2026-10 --amount 50000    # 10월 지출 42,000원 → 사용률 84%
+python -m budget_app summary --month 2026-09 --top 3
+```
 
 ---
 
@@ -348,7 +453,17 @@ python -m budget_app export \
 | 컬럼     | 설명    |
 | ------ | ----- |
 | `memo` | 거래 메모 |
-| `tags` | 거래 태그 |
+| `tags` | 거래 태그 (쉼표로 구분, 여러 개면 `"월급,고정수입"`처럼 따옴표로 감쌈) |
+| `id`   | 거래 ID (내보내기 시 자동 포함) |
+
+#### 중복 등록 방지
+
+`export`로 내보낸 CSV에는 마지막 컬럼에 거래 `id`가 함께 저장됩니다.
+이 파일을 다시 `import`하면 같은 거래가 새 ID로 또 등록되는 문제를 다음 기준으로 막습니다.
+
+* `id`가 있는 행: 이미 저장된 `id`이면 건너뜁니다. 삭제된 거래라면 원래 `id` 그대로 복원됩니다.
+* `id`가 없는 행: 날짜·유형·카테고리·금액·메모·태그가 모두 같은 거래가 이미 있으면 건너뜁니다.
+* 건너뛴 건수는 결과 메시지에 함께 표시됩니다.
 
 예시:
 
@@ -357,6 +472,13 @@ date,type,category,amount,memo,tags
 2026-09-22,expense,식비,10000,저녁 식사,식사
 2026-09-21,expense,교통,1500,버스,교통
 2026-09-01,income,급여,2500000,월급,
+```
+
+내보내기 결과 예시 (`id` 컬럼 포함):
+
+```csv
+date,type,category,amount,memo,tags,id
+2026-09-22,expense,식비,10000,저녁 식사,식사,f76c13acd27f
 ```
 
 ---
