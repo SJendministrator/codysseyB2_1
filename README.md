@@ -220,6 +220,42 @@ python -m budget_app summary --month 2026-09 --top 3
 
 ---
 
+## Makefile 시나리오 시연
+
+`make` 한 번으로 **생성 → 조회 → 수정 → 요약 → 내보내기 → 삭제 → 정리**까지 전체 흐름을 자동으로 시연하고, 실행 과정을 로그 파일로 저장합니다.
+실제 `data/`는 건드리지 않고 별도의 `demo_data/` 폴더를 사용합니다.
+
+```bash
+make demo         # 시나리오 실행 + logs/demo_YYYYMMDD_HHMMSS.log 저장
+make clean        # demo_data/, demo.csv 삭제
+make clean-logs   # logs/ 삭제
+```
+
+시나리오: **"11월에 카페 지출 관리해 보기"**
+
+| 단계 | 내용 | 명령 |
+|---|---|---|
+| 1 | 카테고리 추가 (카페) | `category add` |
+| 2 | 11월 예산 설정 (300,000원) | `budget set` |
+| 3 | 수입 추가 (11월 월급) | `add` |
+| 4 | 지출 추가 (카페 4,500원) | `add` |
+| 5 | 거래 목록 조회 | `list` |
+| 6 | 카테고리로 검색 | `search --category` |
+| 7 | 사용 중인 카테고리 삭제 시도 → **거부되어야 정상** | `category remove` |
+| 8 | 지출 수정 (5,500원 / 카페라떼) | `update` |
+| 9 | 11월 요약 | `summary` |
+| 10 | 11월 거래 CSV 내보내기 | `export` |
+| 11 | 거래 삭제 (지출, 수입) | `delete` |
+| 12 | 카테고리 삭제 → 이제는 성공 | `category remove` |
+| 13 | 빈 상태 확인 | `list` |
+| 14 | 시연 데이터 정리 | `rm -rf demo_data demo.csv` |
+
+* `add`는 대화형 입력이므로 `printf`로 6개 항목을 한 번에 넘깁니다.
+* 거래 ID는 실행마다 랜덤이므로 `demo_data/.income_id`, `.expense_id`에 저장해 두고 수정/삭제에 사용합니다.
+* 화면 출력과 앱 로그(stderr)를 함께 `tee`로 로그 파일에 저장하며, 로그 파일은 `.gitignore`(`*.log`)로 저장소에서 제외됩니다.
+
+---
+
 ## 명령어 사용법
 
 ### 1. 거래 추가
@@ -544,6 +580,7 @@ budget_app_project/
 │   ├── main.png
 │   ├── list.png
 │   └── summary.png
+├── Makefile
 ├── README.md
 └── .gitignore
 ```
