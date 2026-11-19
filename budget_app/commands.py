@@ -66,7 +66,7 @@ def handle_add(args) -> int:
         date=date,
         transaction_type=transaction_type,
         category=category,
-        amount=str(amount),
+        amount=amount,
         memo=memo,
         tags=tags,
     )

@@ -30,17 +30,23 @@ def validate_month(value: str) -> str:
 
     return parsed.strftime("%Y-%m")
 
-
+#입력 경로가 전부 문자열이라 검증 함수 하나에서 변환까지 책임지게 함
 # 입력받은 금액이 0보다 큰 정수인지 확인한다.
-def validate_amount(value: str) -> int:
-    try:
-        amount = int(value)
-    except ValueError:
-        raise ValueError("금액은 정수로 입력하세요.")
+# 금액 검증: 문자열(input/CSV/옵션)과 이미 검증된 정수 둘 다 받는다
+def validate_amount(value: str | int) -> int:
+    # --- 이미 정수면 범위만 확인 ---
+    if isinstance(value, int):
+        amount = value
+    # --- 문자열이면 정수로 변환 ---
+    else:
+        try:
+            amount = int(value.strip())
+        except ValueError:
+            raise ValueError("금액은 정수로 입력하세요.")
 
+    # --- 공통: 양수 확인 ---
     if amount <= 0:
         raise ValueError("금액은 0보다 커야 합니다.")
-
     return amount
 
 
